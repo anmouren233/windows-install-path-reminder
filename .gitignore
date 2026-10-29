@@ -1,0 +1,10 @@
+source/build/
+source/test-results/
+work/
+outputs/
+.vs/
+*.user
+*.suo
+settings.xml
+history.xml
+*.corrupt-*
