@@ -27,7 +27,7 @@ namespace InstallPathReminder
         {
             SuspendLayout();
             this.context = context;
-            Text = "安装路径提醒";
+            Text = "安装路径提醒 v1.2.1";
             Icon = Visuals.AppIcon;
             Font = new Font("Microsoft YaHei UI", 10);
             ForeColor = Visuals.Ink;
@@ -221,6 +221,13 @@ namespace InstallPathReminder
             saved.Text = "已复制建议安装路径，可在安装向导中粘贴。";
         }
 
+        internal void ShowNotificationStatus(string message, bool failed)
+        {
+            saved.ForeColor = failed ? Color.Firebrick : Visuals.Muted;
+            saved.MaximumSize = new Size(700, 0);
+            saved.Text = message;
+        }
+
         internal void LoadSettings()
         {
             preferred.Text = context.Settings.PreferredPath;
@@ -262,7 +269,7 @@ namespace InstallPathReminder
                 foreach (HistoryEntry entry in context.Store.LoadHistory())
                 {
                     ListViewItem item = new ListViewItem(new[] { entry.Time.ToString("MM-dd HH:mm:ss"), entry.Application ?? "", entry.Action ?? "", entry.Reason ?? "" });
-                    item.ToolTipText = entry.ExecutablePath ?? "";
+                    item.ToolTipText = (entry.ExecutablePath ?? "") + "\n" + (entry.NotificationDetails ?? "");
                     item.Tag = entry;
                     history.Items.Add(item);
                 }

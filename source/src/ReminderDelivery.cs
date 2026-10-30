@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.InteropServices;
 using Microsoft.Toolkit.Uwp.Notifications;
 
 namespace InstallPathReminder
@@ -23,6 +24,28 @@ namespace InstallPathReminder
     {
         private readonly OnActivated activated;
         private bool initialized;
+        internal event Action<string, string> Failed;
+        [DllImport("shell32.dll")] private static extern int SHQueryUserNotificationState(out int state);
+
+        internal static string ShellStatus()
+        {
+            int state;
+            try { if (SHQueryUserNotificationState(out state) != 0) return "无法读取系统显示状态"; }
+            catch { return "无法读取系统显示状态"; }
+            return DescribeShellState(state);
+        }
+
+        internal static string DescribeShellState(int state)
+        {
+            switch (state)
+            {
+                case 2: case 3: case 4: return "系统处于忙碌、全屏或演示状态，可能不显示横幅";
+                case 1: return "当前会话非活动状态，可能不显示横幅";
+                case 6: return "系统处于安静时段，可能不显示横幅";
+                case 5: return "系统允许显示；横幅仍受勿扰模式及应用通知设置控制";
+                default: return "请检查 Windows 通知中心、勿扰模式及应用横幅设置";
+            }
+        }
 
         internal WindowsNotificationDelivery(Action<string> action)
         {
@@ -39,7 +62,18 @@ namespace InstallPathReminder
         internal void Show(HistoryEntry entry, bool test)
         {
             Initialize();
-            Build(entry, test).Show();
+            var notifier = ToastNotificationManagerCompat.CreateToastNotifier();
+            var setting = notifier.Setting;
+            if (setting != Windows.UI.Notifications.NotificationSetting.Enabled)
+                throw new InvalidOperationException("Windows 已阻止通知（" + setting + "）。请在系统设置 → 通知中检查应用和全局开关；组策略限制请联系管理员。");
+            Build(entry, test).Show(delegate(Windows.UI.Notifications.ToastNotification toast)
+            {
+                toast.Failed += delegate(Windows.UI.Notifications.ToastNotification sender, Windows.UI.Notifications.ToastFailedEventArgs e)
+                {
+                    var callback = Failed;
+                    if (callback != null) callback(entry.NotificationId, "Windows 异步发送失败：" + e.ErrorCode.Message + " (0x" + e.ErrorCode.HResult.ToString("X8") + ")");
+                };
+            });
         }
 
         internal static ToastContentBuilder Build(HistoryEntry entry, bool test)

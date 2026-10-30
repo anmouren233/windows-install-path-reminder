@@ -95,6 +95,9 @@ internal static class DeliveryIntegrationTests
                 fail = true;
                 context.TestReminder(ReminderChannels.Windows, @"C:\FailedApps", false);
                 Check(PopupCount == 0 && context.Store.LoadHistory()[0].Action.Contains("失败"), "native delivery failure is recorded without switching to popup");
+                Check(context.Store.LoadHistory()[0].NotificationDetails.Contains("Simulated notification failure"), "synchronous failure detail survives storage reload");
+                context.ReportNativeFailure(original.NotificationId, "Windows failure 0x80004005");
+                Check(context.Store.FindHistory(original.NotificationId).NotificationDetails == "Windows failure 0x80004005" && context.Store.FindHistory(latest.NotificationId).Action.Contains("已提交"), "asynchronous failure updates only its matching notification");
                 context.Quit();
             }
             using (ReminderContext reopened = new ReminderContext(dataDirectory, true, native, false, copy))

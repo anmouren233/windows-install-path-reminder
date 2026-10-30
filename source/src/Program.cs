@@ -107,6 +107,10 @@ namespace InstallPathReminder
                     });
                 });
                 submitWindowsNotification = windowsNotifications.Show;
+                windowsNotifications.Failed += delegate(string id, string error)
+                {
+                    Post(delegate { ReportNativeFailure(id, error); });
+                };
                 // Register activation at every startup so older notifications still work
                 // after a normal restart or a switch back to popup reminders.
                 try { windowsNotifications.Initialize(); }
@@ -237,6 +241,14 @@ namespace InstallPathReminder
             Enqueue(new ProcessSnapshot { Name = "示例软件 Setup.exe", ExecutablePath = "", FileDescription = "示例软件安装程序" }, "这是测试提醒，没有运行真实安装程序。", true, channel, preferredPath, sound);
         }
 
+        internal void ReportNativeFailure(string id, string error)
+        {
+            try { Store.UpdateHistoryAction(id, "系统通知发送失败", error); }
+            catch (Exception ex) { error += "；无法保存记录：" + ex.Message; }
+            Window.ShowNotificationStatus(error, true);
+            Window.RefreshLists();
+        }
+
         private void Enqueue(ProcessSnapshot process, string reason, bool test, string channel = null, string preferredPath = null, bool? sound = null)
         {
             if (closing || (!test && !Settings.NotificationsEnabled)) return;
@@ -276,18 +288,23 @@ namespace InstallPathReminder
             try { Store.AddHistory(entry); }
             catch (Exception ex) { MonitorStatus = "记录保存失败，未发送提醒：" + ex.Message; Window.RefreshStatus(); Post(delegate { ShowNext(); }); return; }
             string action;
+            string notificationDetails = null;
             if (item.Channel == ReminderChannels.Windows)
             {
                 try
                 {
                     submitWindowsNotification(entry, item.Test);
                     action = item.Test ? "测试 · 已提交系统" : "已提交系统通知";
+                    notificationDetails = "已提交系统；" + WindowsNotificationDelivery.ShellStatus() + "。";
+                    if (item.Test) Window.ShowNotificationStatus(notificationDetails, false);
                 }
                 catch (Exception ex)
                 {
                     // Keep the selected channel. Do not silently create an intrusive popup.
                     action = item.Test ? "测试 · 系统通知失败" : "系统通知发送失败";
                     MonitorStatus = "通知发送失败，请查看提醒记录：" + ex.Message;
+                    notificationDetails = ex.ToString();
+                    Window.ShowNotificationStatus("通知发送失败：" + ex.Message, true);
                     Window.RefreshStatus();
                 }
             }
@@ -296,7 +313,7 @@ namespace InstallPathReminder
                 OpenPopup(item, item.SoundEnabled);
                 action = item.Test ? "测试 · 弹窗" : "已显示弹窗";
             }
-            try { Store.UpdateHistoryAction(entry.NotificationId, action); }
+            try { Store.UpdateHistoryAction(entry.NotificationId, action, notificationDetails); }
             catch (Exception ex) { MonitorStatus = "记录保存失败：" + ex.Message; Window.RefreshStatus(); }
             Window.RefreshLists();
             if (item.Channel == ReminderChannels.Windows) Post(delegate { ShowNext(); });

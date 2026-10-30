@@ -6,6 +6,8 @@ New-Item -ItemType Directory -Path $results -Force | Out-Null
 $src = Join-Path $PSScriptRoot 'src'
 $tests = Join-Path $PSScriptRoot 'tests'
 $notifications = Join-Path $PSScriptRoot 'lib\Microsoft.Toolkit.Uwp.Notifications.dll'
+. (Join-Path $PSScriptRoot 'compiler-references.ps1')
+$notificationReferences = @(Get-NotificationCompilerReferences -ProjectRoot $PSScriptRoot)
 Copy-Item -LiteralPath $notifications -Destination $results
 function Assert-Exit([string]$label) { if ($LASTEXITCODE -ne 0) { throw ($label + ' failed, exit code ' + $LASTEXITCODE) } }
 & $compiler /nologo /utf8output /target:exe ('/out:' + (Join-Path $results 'DetectorTests.exe')) /reference:System.Management.dll (Join-Path $src 'InstallerDetection.cs') (Join-Path $tests 'DetectorTests.cs')
@@ -14,7 +16,7 @@ Assert-Exit 'Compile DetectorTests'
 Assert-Exit 'DetectorTests'
 $appSources = @(Get-ChildItem -LiteralPath $src -Filter '*.cs' | ForEach-Object { $_.FullName })
 foreach ($testName in @('StorageTests','NotificationTests','InstallPathTests','DeliveryIntegrationTests')) {
-    & $compiler /nologo /utf8output /target:exe ('/main:' + $testName) ('/out:' + (Join-Path $results ($testName + '.exe'))) ('/reference:' + $notifications) /reference:System.dll /reference:System.Core.dll /reference:System.Windows.Forms.dll /reference:System.Drawing.dll /reference:System.Management.dll /reference:System.Xml.dll @appSources (Join-Path $tests ($testName + '.cs'))
+    & $compiler /nologo /utf8output /target:exe ('/main:' + $testName) ('/out:' + (Join-Path $results ($testName + '.exe'))) @notificationReferences /reference:System.dll /reference:System.Core.dll /reference:System.Windows.Forms.dll /reference:System.Drawing.dll /reference:System.Management.dll /reference:System.Xml.dll @appSources (Join-Path $tests ($testName + '.cs'))
     Assert-Exit ('Compile ' + $testName)
     & (Join-Path $results ($testName + '.exe')) (Join-Path $results ($testName + '-data'))
     Assert-Exit $testName

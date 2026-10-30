@@ -4,9 +4,13 @@
 
 例如，根目录为 `D:\Apps`、软件为 Firefox 时，建议路径为 `D:\Apps\Firefox`。
 
+## 原生通知没有横幅时
+
+v1.2.1 会检查通知允许状态，显示测试反馈并保存异步错误。发送成功不代表横幅出现；请查看通知中心及系统的勿扰、全屏和应用横幅设置。详见 [通知排查说明](docs/通知排查说明.md)。
+
 ## 下载与使用
 
-**[下载 v1.2 软件包](downloads/InstallPathReminder-v1.2.zip?raw=1)** · [SHA-256 校验值](downloads/SHA256SUMS.txt)
+**[下载 v1.2.1 软件包](downloads/InstallPathReminder-v1.2.1.zip?raw=1)** · [SHA-256 校验值](downloads/SHA256SUMS.txt)
 
 1. 下载并解压整个文件夹，双击 `InstallPathReminder.exe`。
 2. 设置“建议安装根目录”，选择“弹窗提醒”或“Windows 原生通知”，保存设置。
@@ -30,7 +34,7 @@
 
 - 目标系统：Windows 10 22H2，.NET Framework 4.8，AnyCPU。
 - 运行无需 Python、.NET SDK 或联网下载依赖。
-- 已通过 **152 项自动化检查**，覆盖检测、存储、路径生成、通知动作、复制路由和进程监测。
+- 已通过 **149 项相关自动化检查（本次；另有 8 项进程监测基线检查）**，覆盖检测、存储、路径生成、通知动作、复制路由和进程监测。
 - 实际验证主机为 Windows 11 25H2；尚未在真实 Windows 10 22H2 设备上验收。
 - 原生 Toast 已成功提交给 Windows；真实通知按钮点击和通知冷启动尚未完成端到端验收。程序未进行商业代码签名。
 

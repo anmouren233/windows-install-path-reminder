@@ -41,6 +41,7 @@ namespace InstallPathReminder
         public string PreferredPath { get; set; }
         public string SuggestedPath { get; set; }
         public string SoftwareName { get; set; }
+        public string NotificationDetails { get; set; }
     }
 
     public sealed class LocalStore
@@ -120,13 +121,13 @@ namespace InstallPathReminder
             lock (gate) return LoadHistory().FirstOrDefault(x => String.Equals(x.NotificationId, notificationId, StringComparison.OrdinalIgnoreCase));
         }
 
-        public void UpdateHistoryAction(string notificationId, string action)
+        public void UpdateHistoryAction(string notificationId, string action, string details = null)
         {
             lock (gate)
             {
                 List<HistoryEntry> history = LoadHistory();
                 HistoryEntry entry = history.FirstOrDefault(x => String.Equals(x.NotificationId, notificationId, StringComparison.OrdinalIgnoreCase));
-                if (entry != null) { entry.Action = XmlText(action, 512); WriteXml(HistoryFile, history); }
+                if (entry != null) { entry.Action = XmlText(action, 512); if (details != null) entry.NotificationDetails = XmlText(details, 4096); WriteXml(HistoryFile, history); }
             }
         }
 

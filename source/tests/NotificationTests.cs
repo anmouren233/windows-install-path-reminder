@@ -16,6 +16,9 @@ internal static class NotificationTests
         try
         {
             Check(ReminderChannels.Normalize(null) == ReminderChannels.Popup, "legacy channel defaults to popup");
+            Check(WindowsNotificationDelivery.DescribeShellState(2).Contains("可能不显示横幅"), "busy system warns about suppressed banners");
+            Check(WindowsNotificationDelivery.DescribeShellState(5).Contains("仍受"), "allowed shell state does not promise a visible banner");
+            Check(WindowsNotificationDelivery.DescribeShellState(0).Contains("检查"), "unknown shell state gives actionable guidance");
             Check(ReminderChannels.Normalize("windows") == ReminderChannels.Windows, "Windows preference normalized");
             HistoryEntry entry = new HistoryEntry { NotificationId = Guid.NewGuid().ToString("N"), SoftwareName = "A & B 软件", SuggestedPath = @"C:\Apps\A & B 软件" };
             XmlDocument xml = new XmlDocument();
